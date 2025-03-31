@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Comparison</title>
+    <style>
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .image-container {
+            text-align: center;
+        }
+        img {
+            width: 100px;
+            height: 100px;
+            image-rendering: pixelated;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .image-pair {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>4x4 Grayscale Image Comparison</h1>
+    
+    <div class="image-grid">
+        {% for i in range(16) %}
+        <div class="image-container">
+            <img src="{{ url_for('static', filename='images/image_' + i|string + '.png') }}" alt="Image {{i}}">
+            <p>Image {{i}}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <button onclick="compareImages()">Compare Random Pairs</button>
+
+    <table id="comparison-results">
+        <thead>
+            <tr>
+                <th>Image Pair</th>
+                <th>Difference Image</th>
+                <th>RMSE Score</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <script>
+        let currentImages = [];
+
+        function compareImages() {
+            fetch('/compare')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('#comparison-results tbody');
+                    tbody.innerHTML = '';
+                    
+                    data.forEach(result => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>
+                                <div class="image-pair">
+                                    <div>
+                                        <img src="data:image/png;base64,${result.image1}" alt="Image 1">
+                                        <p>Image ${result.image1_id}</p>
+                                    </div>
+                                    <div>
+                                        <img src="data:image/png;base64,${result.image2}" alt="Image 2">
+                                        <p>Image ${result.image2_id}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <img src="data:image/png;base64,${result.diff_image}" alt="Difference">
+                            </td>
+                            <td>${result.rmse.toFixed(4)}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                });
+        }
+
+        // Load initial images
+        window.onload = function() {
+            const grid = document.querySelector('.image-grid');
+            grid.innerHTML = '';
+            
+            fetch('/generate')
+                .then(response => response.json())
+                .then(data => {
+                    currentImages = data;
+                    data.forEach(img => {
+                        const div = document.createElement('div');
+                        div.className = 'image-container';
+                        div.innerHTML = `
+                            <img src="data:image/png;base64,${img.data}" alt="Image ${img.id}">
+                            <p>Image ${img.id}</p>
+                        `;
+                        grid.appendChild(div);
+                    });
+                });
+        };
+    </script>
+</body>
+</html> 
