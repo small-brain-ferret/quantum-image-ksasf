@@ -38,8 +38,8 @@ except ImportError as e:
     print(f"❌ analysis.py failed: {e}")
 
 # Configuration: adjust index and shots here
-selected_index = 7
-num_shots = 1000
+selected_index = int(input("Enter the index of the image to retrieve (0-41999): "))
+num_shots = int(input("Enter the number of shots for simulation (e.g., 1000): "))
 
 images, angles = load_and_process_image(selected_index)
 
