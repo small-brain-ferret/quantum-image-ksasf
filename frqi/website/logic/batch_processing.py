@@ -8,9 +8,9 @@ from ..preprocess import load_and_process_image
 
 def process_image(i, images, shot_counts, simulator):
     try:
-        from frqi.website.preprocess import load_and_process_image
-        from build_circuit import build_circuit
-        from analysis import compute_fidelity
+        from website.preprocess import load_and_process_image
+        from website.build_circuit import build_circuit
+        from website.analysis import compute_fidelity
         from qiskit import transpile
         rows = []
         fidelity_sums = np.zeros_like(shot_counts, dtype=float)
