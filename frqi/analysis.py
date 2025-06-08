@@ -26,11 +26,4 @@ def fidelity_vs_shots(qc, original_image, simulator):
         retrieved = (retrieved * 8.0 * 255.0).astype(int)
         retr_norm = retrieved / np.linalg.norm(retrieved)
         fidelities.append(state_fidelity(ideal_state, Statevector(retr_norm)))
-    plt.figure(figsize=(8, 5))
-    plt.plot(shot_counts, fidelities, '-', lw=2)
-    plt.xscale('log')
-    plt.xlabel('Number of Shots')
-    plt.ylabel('Fidelity')
-    plt.title('FRQI Retrieval Fidelity vs. Shots')
-    plt.grid(True)
-    plt.show()
+ 
