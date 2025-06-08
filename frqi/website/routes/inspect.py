@@ -50,6 +50,7 @@ def inspect_image():
     retr_img_b64 = array_to_base64_img(retrieved_img)
 
     html = f'''
+    <link rel="stylesheet" href="/static/style.css">
     <h2>Inspect Image {index}</h2>
     <p>Shots: {shots}</p>
     <p>Fidelity: {fidelity:.4f}</p>

@@ -5,6 +5,7 @@ main_bp = Blueprint('main', __name__)
 @main_bp.route('/')
 def index():
     return '''
+    <link rel="stylesheet" href="/static/style.css">
     <h1>Select Batch</h1>
     <form id="batchForm">
         <label for="batch">Select Batch Number (0–41):</label>

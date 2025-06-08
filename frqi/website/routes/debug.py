@@ -72,6 +72,7 @@ def debug_run():
         plot_data = base64.b64encode(f.read()).decode('utf-8')
 
     html = f'''
+    <link rel="stylesheet" href="/static/style.css">
     <h2>Debug Run: 10 Random Images</h2>
     <p><a href="/download_csv?start=debug">Download Debug Results CSV</a></p>
     <h3>Average Fidelity vs Shots</h3>
