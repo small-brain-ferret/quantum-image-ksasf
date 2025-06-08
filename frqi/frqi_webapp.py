@@ -35,6 +35,8 @@ def index():
     const form = document.getElementById('batchForm');
     form.onsubmit = e => {
         e.preventDefault();
+        document.getElementById('batchSlider').disabled = true;
+        document.querySelector('input[type="submit"]').disabled = true;
         const batch_number = document.getElementById('batchSlider').value;
         const start_index = batch_number * 1000;
         document.getElementById('start_index').value = start_index;
@@ -44,11 +46,21 @@ def index():
         bar.max = 1000;
         bar.value = 0;
         bar.id = 'bar';
+        const timer = document.createElement('p');
+        timer.id = 'timer';
+        timer.innerText = 'Elapsed Time: 0.0s';
         document.getElementById('progress').innerHTML = '<p id="progressText"></p>';
         document.getElementById('progress').appendChild(bar);
+        document.getElementById('progress').appendChild(timer);
+
+        let timeTicker = setInterval(() => {
+            const elapsed = (Date.now() - startTime) / 1000;
+            timer.innerText = `Elapsed Time: ${elapsed.toFixed(1)}s`;
+        }, 500);
 
         let startTime = Date.now();
-        const interval = setInterval(async () => {
+        let lastElapsed = 0;
+        let interval = setInterval(async () => {
             const res = await fetch('/progress');
             const data = await res.json();
             bar.value = data.done;
@@ -60,6 +72,7 @@ def index():
 
             if (data.done >= data.total) {
                 clearInterval(interval);
+                clearInterval(timeTicker);
                 window.location.href = `/result?start=${start_index}&size=1000`;
             }
         }, 1000);
@@ -81,18 +94,13 @@ def get_progress():
 @app.route('/result')
 def result():
     import time
+    import base64
     start = int(request.args.get('start', 0))
     size = int(request.args.get('size', 1000))
-    plot_path = f'batch_{start}_plot.png'
-    timeout = 10
-    while not os.path.exists(plot_path) and timeout > 0:
-        time.sleep(1)
-        timeout -= 1
-
-    if not os.path.exists(plot_path):
-        return "Plot not found yet. Please refresh this page in a few seconds.", 503
-
-    with open(plot_path, 'rb') as f:
+    plot_filename = f'batch_{start}_plot.png'
+    if not os.path.exists(plot_filename):
+        return "Plot not found. Please process the batch first.", 503
+    with open(plot_filename, 'rb') as f:
         plot_data = base64.b64encode(f.read()).decode('utf-8')
 
     html = f'''
@@ -112,6 +120,52 @@ def result():
     '''
     return render_template_string(html)
 
+def run_batch(start, size):
+    global progress
+    import concurrent.futures
+    end = start + size
+    progress = {'done': 0, 'total': size, 'status': 'running'}
+
+    images, _ = load_and_process_image(0)
+    shot_counts = np.arange(100, 2100, 100)
+    all_rows = [('ImageIndex', 'Shots', 'Fidelity')]
+    avg_fidelity = np.zeros_like(shot_counts, dtype=float)
+
+    with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
+        futures = {
+            executor.submit(process_image, i, images, shot_counts, simulator): i
+            for i in range(start, end)
+        }
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                rows, fidelity_sums = future.result()
+            except Exception as e:
+                print(f"Error processing image {futures[future]}: {e}")
+                continue
+            all_rows.extend(rows)
+            avg_fidelity += fidelity_sums
+            progress['done'] += 1
+
+    avg_fidelity /= size
+
+    csv_io = StringIO()
+    writer = csv.writer(csv_io)
+    writer.writerows(all_rows)
+    # Do not write to CSV file — keep data in memory only
+
+    fig, ax = plt.subplots()
+    ax.plot(shot_counts, avg_fidelity, marker='o')
+    ax.set_title(f'Average Fidelity for Batch {start}-{end-1}')
+    ax.set_xlabel('Shots')
+    ax.set_ylabel('Average Fidelity')
+    ax.grid(True)
+    plot_filename = f'batch_{start}_plot.png'
+    plt.savefig(plot_filename, format='png')
+    plt.close(fig)
+    # No in-memory plot, just save to file
+
+    progress['status'] = 'done'
+
 @app.route('/download_csv')
 def download_csv():
     start = int(request.args.get('start', 0))
@@ -121,20 +175,17 @@ def download_csv():
         return 'File not found. Please process the batch first.', 404
     return send_file(path, as_attachment=True, download_name=filename, mimetype='text/csv')
 
-def run_batch(start, size):
-    global progress
-    end = start + size
-    progress = {'done': 0, 'total': size, 'status': 'running'}
-
-    images, _ = load_and_process_image(0)
-    shot_counts = np.arange(100, 2100, 100)
-    all_rows = [('ImageIndex', 'Shots', 'Fidelity')]
-    avg_fidelity = np.zeros_like(shot_counts, dtype=float)
-
-    for i in range(start, end):
+def process_image(i, images, shot_counts, simulator):
+    try:
+        from preprocess import load_and_process_image
+        from build_circuit import build_circuit
+        from analysis import compute_fidelity
+        from qiskit import transpile
+        rows = []
+        fidelity_sums = np.zeros_like(shot_counts, dtype=float)
         _, angles = load_and_process_image(i)
         qc = build_circuit(angles)
-        t_qc = transpile(qc, simulator)
+        t_qc = transpile(qc, simulator, optimization_level=0)
 
         for j, shots in enumerate(shot_counts):
             result = simulator.run(t_qc, shots=shots).result()
@@ -146,31 +197,13 @@ def run_batch(start, size):
                 retrieved[idx] = np.sqrt(freq / shots) if freq else 0.0
             retrieved = (retrieved * 8.0 * 255.0).astype(int).reshape((8, 8))
             fidelity = compute_fidelity(images[i], retrieved)
-            all_rows.append((i, shots, fidelity))
-            avg_fidelity[j] += fidelity
-        progress['done'] += 1
-
-    avg_fidelity /= size
-
-    csv_io = StringIO()
-    writer = csv.writer(csv_io)
-    writer.writerows(all_rows)
-    with open(f'batch_{start}_results.csv', 'w', newline='') as f:
-        f.write(csv_io.getvalue())
-
-    fig, ax = plt.subplots()
-    ax.plot(shot_counts, avg_fidelity, marker='o')
-    ax.set_title(f'Average Fidelity for Batch {start}-{end-1}')
-    ax.set_xlabel('Shots')
-    ax.set_ylabel('Average Fidelity')
-    ax.grid(True)
-    img_buf = BytesIO()
-    plt.savefig(img_buf, format='png')
-    plt.close(fig)
-    with open(f'batch_{start}_plot.png', 'wb') as f:
-        f.write(img_buf.getvalue())
-
-    progress['status'] = 'done'
+            rows.append((i, shots, fidelity))
+            fidelity_sums[j] = fidelity
+        return rows, fidelity_sums
+    except Exception as e:
+        print(f"Skipping image {i} due to error: {e}")
+        # Return empty results so batch logic can continue
+        return [], np.zeros_like(shot_counts, dtype=float)
 
 @app.route('/inspect_image')
 def inspect_image():
