@@ -4,7 +4,7 @@ from qiskit import transpile
 from qiskit_aer import AerSimulator
 from website.preprocess import load_and_process_image
 from website.build_circuit import build_circuit
-from website.analysis import compute_fidelity
+from website.analysis import compute_fidelity, balanced_weighted_mae
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -28,6 +28,7 @@ def inspect_image():
     index = int(request.args.get('image'))
     shots = int(request.args.get('shots'))
     start = int(request.args.get('start', 0))
+    weighted_fidelity = bool(int(request.args.get('weighted_fidelity', 0)))
 
     images, angles = load_and_process_image(index)
     qc = build_circuit(angles)
@@ -44,7 +45,12 @@ def inspect_image():
     retrieved_img = (retrieved * 8.0 * 255.0).astype(int).reshape((8, 8))
 
     original = images[index]
-    fidelity = compute_fidelity(original, retrieved_img)
+    if weighted_fidelity:
+        metric = balanced_weighted_mae(original, retrieved_img)
+        metric_name = "Weighted Fidelity"
+    else:
+        metric = compute_fidelity(original, retrieved_img)
+        metric_name = "Fidelity"
 
     orig_img_b64 = array_to_base64_img(original)
     retr_img_b64 = array_to_base64_img(retrieved_img)
@@ -53,11 +59,11 @@ def inspect_image():
     <link rel="stylesheet" href="/static/style.css">
     <h2>Inspect Image {index}</h2>
     <p>Shots: {shots}</p>
-    <p>Fidelity: {fidelity:.4f}</p>
+    <p>{metric_name}: {metric:.4f}</p>
     <h3>Original Image</h3>
     <img src="data:image/png;base64,{orig_img_b64}" alt="Original Image"/>
     <h3>Retrieved Image</h3>
     <img src="data:image/png;base64,{retr_img_b64}" alt="Retrieved Image"/>
-    <p><a href="/result?start={start}&size=1000">Back to Results</a></p>
+    <p><a href="/result?start={start}&size=1000&weighted_fidelity={int(weighted_fidelity)}">Back to Results</a></p>
     '''
     return render_template_string(html)

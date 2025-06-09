@@ -2,6 +2,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from qiskit.quantum_info import Statevector, state_fidelity
 
+def balanced_weighted_mae(original, retrieved, epsilon=0.01):
+    # Normalize to [0,1] if not already
+    orig = np.asarray(original, dtype=np.float32) / 255.0
+    retr = np.asarray(retrieved, dtype=np.float32) / 255.0
+    weights = epsilon + (1 - np.abs(orig - 0.5))
+    numerator = np.sum(weights * np.abs(orig - retr))
+    denominator = np.sum(weights)
+    return 1.0 - (numerator / denominator)  # Higher is better, like fidelity
+
 def compute_fidelity(original, retrieved):
     original_flat = original.flatten()
     original_norm = original_flat / np.linalg.norm(original_flat)
