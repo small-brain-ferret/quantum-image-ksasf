@@ -12,15 +12,18 @@ from qiskit_aer import AerSimulator
 from website.preprocess import load_and_process_image
 from website.build_circuit import build_circuit
 from website.analysis import SSIM, balanced_weighted_mae
+import numpy as np
+from scipy.optimize import curve_fit
 
 debug_bp = Blueprint('debug', __name__)
 
 @debug_bp.route('/debug_run')
 def debug_run():
     weighted_fidelity = bool(int(request.args.get('weighted_fidelity', 0)))
+    metric_name = "Weighted Fidelity" if weighted_fidelity else "Fidelity"
     total_images = 42000  # Adjust if your dataset size is different
     random_indices = sorted(random.sample(range(total_images), 10))
-    shot_counts = np.arange(100, 2100, 100)
+    shot_counts = np.unique(np.round(np.logspace(np.log10(100), np.log10(4000), num=10)).astype(int))
     all_rows = [('ImageIndex', 'Shots', 'WeightedFidelity' if weighted_fidelity else 'Fidelity')]
     avg_fidelity = np.zeros_like(shot_counts, dtype=float)
     simulator = AerSimulator()
@@ -60,20 +63,33 @@ def debug_run():
     avg_fidelity /= len(random_indices)
 
     # Save CSV
-    filename = f'debug_results{"_weighted" if weighted_fidelity else ""}.csv'
+    filename = f'debug_results_{metric_name.replace(" ", "_").lower()}.csv'
     with open(filename, 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerows(all_rows)
 
     # Save plot
     fig, ax = plt.subplots()
-    ax.plot(shot_counts, avg_fidelity, marker='o')
-    metric_name = "Weighted Fidelity" if weighted_fidelity else "Fidelity"
-    ax.set_title(f'Average {metric_name} for 10 Random Images')
+    ax.plot(shot_counts, avg_fidelity, marker='o', label='Average')
+
+    # Add trendline (logistic fit)
+    def logistic(x, L, x0, k, b):
+        return L / (1 + np.exp(-k*(x-x0))) + b
+
+    try:
+        p0 = [1, np.median(shot_counts), 0.01, 0]
+        params, _ = curve_fit(logistic, shot_counts, avg_fidelity, p0, maxfev=10000)
+        x_fit = np.linspace(min(shot_counts), max(shot_counts), 300)
+        ax.plot(x_fit, logistic(x_fit, *params), color='black', linestyle='-', label='Trendline')
+    except Exception as e:
+        print("Trendline fit failed:", e)
+
+    ax.set_title(f'FRQI Debug: Shots vs Average {metric_name} for 10 Random Images')
     ax.set_xlabel('Shots')
     ax.set_ylabel(f'Average {metric_name}')
     ax.grid(True)
-    plot_filename = f'debug_plot{"_weighted" if weighted_fidelity else ""}.png'
+    ax.legend()
+    plot_filename = f'debug_plot_{metric_name.replace(" ", "_").lower()}.png'
     plt.savefig(plot_filename, format='png')
     plt.close(fig)
 

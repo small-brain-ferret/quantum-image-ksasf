@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 from skimage.metrics import structural_similarity as ssim
 
-def balanced_wighted_mae(original, retrieved):
+def balanced_weighted_mae(original, retrieved):
     # Convert to torch tensors and normalize
     orig = torch.tensor(original, dtype=torch.float32) / 255.0
     retr = torch.tensor(retrieved, dtype=torch.float32) / 255.0
