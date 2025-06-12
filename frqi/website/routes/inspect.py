@@ -4,7 +4,7 @@ from qiskit import transpile
 from qiskit_aer import AerSimulator
 from website.preprocess import load_and_process_image
 from website.build_circuit import build_circuit
-from website.analysis import compute_fidelity, balanced_weighted_mae
+from website.analysis import SSIM, balanced_weighted_mae
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -49,7 +49,7 @@ def inspect_image():
         metric = balanced_weighted_mae(original, retrieved_img)
         metric_name = "Weighted Fidelity"
     else:
-        metric = compute_fidelity(original, retrieved_img)
+        metric = SSIM(original, retrieved_img)
         metric_name = "Fidelity"
 
     orig_img_b64 = array_to_base64_img(original)

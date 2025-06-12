@@ -6,7 +6,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from website.preprocess import load_and_process_image
 from website.build_circuit import build_circuit
-from website.analysis import compute_fidelity, balanced_weighted_mae
+from website.analysis import SSIM, balanced_weighted_mae
 from qiskit import transpile
 
 def process_image(i, images, shot_counts, simulator, weighted_fidelity):
@@ -29,7 +29,7 @@ def process_image(i, images, shot_counts, simulator, weighted_fidelity):
             if weighted_fidelity:
                 metric = balanced_weighted_mae(images[i], retrieved_img)
             else:
-                metric = compute_fidelity(images[i], retrieved_img)
+                metric = SSIM(images[i], retrieved_img)
             rows.append((i, shots, metric))
             fidelity_sums[j] = metric
         return rows, fidelity_sums

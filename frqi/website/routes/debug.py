@@ -11,7 +11,7 @@ from qiskit import transpile
 from qiskit_aer import AerSimulator
 from website.preprocess import load_and_process_image
 from website.build_circuit import build_circuit
-from website.analysis import compute_fidelity, balanced_weighted_mae
+from website.analysis import SSIM, balanced_weighted_mae
 
 debug_bp = Blueprint('debug', __name__)
 
@@ -48,7 +48,7 @@ def debug_run():
                 if weighted_fidelity:
                     metric = balanced_weighted_mae(images[i], retrieved_img)
                 else:
-                    metric = compute_fidelity(images[i], retrieved_img)
+                    metric = SSIM(images[i], retrieved_img)
                 print(f"    Metric for image {i}, shots {shots}: {metric:.4f}")
                 all_rows.append((i, shots, metric))
                 fidelity_sums[j] = metric

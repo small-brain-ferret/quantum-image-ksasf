@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 from skimage.metrics import structural_similarity as ssim
 
-def balanced_weighted_mae(original, retrieved):
+def balanced_wighted_mae(original, retrieved):
     # Convert to torch tensors and normalize
     orig = torch.tensor(original, dtype=torch.float32) / 255.0
     retr = torch.tensor(retrieved, dtype=torch.float32) / 255.0
@@ -23,6 +23,6 @@ def balanced_weighted_mae(original, retrieved):
     loss = F.l1_loss(orig_masked, retr_masked)
     return 1.0 - loss.item()  # Higher = better fidelity
 
-def compute_fidelity(original, retrieved):
+def SSIM(original, retrieved):
     return ssim(original, retrieved, data_range=255)
  
