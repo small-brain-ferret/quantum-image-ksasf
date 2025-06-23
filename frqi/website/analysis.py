@@ -25,4 +25,3 @@ def balanced_weighted_mae(original, retrieved):
 
 def SSIM(original, retrieved):
     return ssim(original, retrieved, data_range=255)
- 

@@ -14,6 +14,7 @@ from website.build_circuit import build_circuit
 from website.analysis import SSIM, balanced_weighted_mae
 import numpy as np
 from scipy.optimize import curve_fit
+from website.plot import plot_metrics
 
 debug_bp = Blueprint('debug', __name__)
 
@@ -23,9 +24,10 @@ def debug_run():
     metric_name = "Weighted Fidelity" if weighted_fidelity else "Fidelity"
     total_images = 42000  # Adjust if your dataset size is different
     random_indices = sorted(random.sample(range(total_images), 10))
-    shot_counts = np.unique(np.round(np.logspace(np.log10(100), np.log10(4000), num=10)).astype(int))
+    shot_counts = np.unique(np.round(np.logspace(np.log10(100), np.log10(100000), num=10)).astype(int))
     all_rows = [('ImageIndex', 'Shots', 'WeightedFidelity' if weighted_fidelity else 'Fidelity')]
     avg_fidelity = np.zeros_like(shot_counts, dtype=float)
+    fidelity_matrix = np.zeros((len(shot_counts), len(random_indices)))
     simulator = AerSimulator()
     images, _ = load_and_process_image(0)
 
@@ -55,12 +57,15 @@ def debug_run():
                 print(f"    Metric for image {i}, shots {shots}: {metric:.4f}")
                 all_rows.append((i, shots, metric))
                 fidelity_sums[j] = metric
+                fidelity_matrix[j, img_idx] = metric
             avg_fidelity += fidelity_sums
         except Exception as e:
             print(f"Skipping image {i} due to error: {e}")
             continue
 
-    avg_fidelity /= len(random_indices)
+    avg_fidelity = np.mean(fidelity_matrix, axis=1)
+    std_fidelity = np.std(fidelity_matrix, axis=1)
+    print("Standard deviations for each shot count:", std_fidelity)
 
     # Save CSV
     filename = f'debug_results_{metric_name.replace(" ", "_").lower()}.csv'
@@ -68,33 +73,10 @@ def debug_run():
         writer = csv.writer(f)
         writer.writerows(all_rows)
 
-    # Save plot
-    fig, ax = plt.subplots()
-    ax.plot(shot_counts, avg_fidelity, marker='o', label='Average')
-
-    # Add trendline (logistic fit)
-    def logistic(x, L, x0, k, b):
-        return L / (1 + np.exp(-k*(x-x0))) + b
-
-    try:
-        p0 = [1, np.median(shot_counts), 0.01, 0]
-        params, _ = curve_fit(logistic, shot_counts, avg_fidelity, p0, maxfev=10000)
-        x_fit = np.linspace(min(shot_counts), max(shot_counts), 300)
-        ax.plot(x_fit, logistic(x_fit, *params), color='black', linestyle='-', label='Trendline')
-    except Exception as e:
-        print("Trendline fit failed:", e)
-
-    ax.set_title(f'FRQI Debug: Shots vs Average {metric_name} for 10 Random Images')
-    ax.set_xlabel('Shots')
-    ax.set_ylabel(f'Average {metric_name}')
-    ax.grid(True)
-    ax.legend()
-    plot_filename = f'debug_plot_{metric_name.replace(" ", "_").lower()}.png'
-    plt.savefig(plot_filename, format='png')
-    plt.close(fig)
+    plot_metrics(shot_counts, avg_fidelity, metric_name, std_fidelity)
 
     # Embed plot in HTML
-    with open(plot_filename, 'rb') as f:
+    with open(f'debug_plot_{metric_name.replace(" ", "_").lower()}.png', 'rb') as f:
         plot_data = base64.b64encode(f.read()).decode('utf-8')
 
     html = f'''
