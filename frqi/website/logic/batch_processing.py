@@ -50,7 +50,8 @@ def run_batch(start, size, simulator, progress, metric):
     all_rows = [('ImageIndex', 'Shots', metric_name)]
     avg_metric = np.zeros_like(shot_counts, dtype=float)
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
+    # Use ThreadPoolExecutor instead of ProcessPoolExecutor
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         futures = {
             executor.submit(process_image, i, images, shot_counts, simulator, metric): i
             for i in range(start, end)
