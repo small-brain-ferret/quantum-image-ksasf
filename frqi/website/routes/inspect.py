@@ -28,7 +28,7 @@ def inspect_image():
     index = int(request.args.get('image'))
     shots = int(request.args.get('shots'))
     start = int(request.args.get('start', 0))
-    weighted_fidelity = bool(int(request.args.get('weighted_fidelity', 0)))
+    metric = request.args.get('metric', 'ssim').lower()
 
     images, angles = load_and_process_image(index)
     qc = build_circuit(angles)
@@ -45,12 +45,12 @@ def inspect_image():
     retrieved_img = (retrieved * 8.0 * 255.0).astype(int).reshape((8, 8))
 
     original = images[index]
-    if weighted_fidelity:
-        metric = balanced_weighted_mae(original, retrieved_img)
-        metric_name = "Weighted Fidelity"
+    if metric == 'mae':
+        value = balanced_weighted_mae(original, retrieved_img)
+        metric_name = 'MAE'
     else:
-        metric = SSIM(original, retrieved_img)
-        metric_name = "Fidelity"
+        value = SSIM(original, retrieved_img)
+        metric_name = 'SSIM'
 
     orig_img_b64 = array_to_base64_img(original)
     retr_img_b64 = array_to_base64_img(retrieved_img)
@@ -59,11 +59,11 @@ def inspect_image():
     <link rel="stylesheet" href="/static/style.css">
     <h2>Inspect Image {index}</h2>
     <p>Shots: {shots}</p>
-    <p>{metric_name}: {metric:.4f}</p>
+    <p>{metric_name}: {value:.4f}</p>
     <h3>Original Image</h3>
     <img src="data:image/png;base64,{orig_img_b64}" alt="Original Image"/>
     <h3>Retrieved Image</h3>
     <img src="data:image/png;base64,{retr_img_b64}" alt="Retrieved Image"/>
-    <p><a href="/result?start={start}&size=1000&weighted_fidelity={int(weighted_fidelity)}">Back to Results</a></p>
+    <p><a href="/result?start={start}&size=1000&metric={metric}">Back to Results</a></p>
     '''
     return render_template_string(html)

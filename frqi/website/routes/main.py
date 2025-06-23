@@ -65,7 +65,7 @@ def index():
             if (data.done >= data.total) {
                 clearInterval(interval);
                 clearInterval(timeTicker);
-                window.location.href = `/result?start=${start_index}&size=1000&weighted_fidelity=${weighted}`;
+                window.location.href = `/result?start=${start_index}&size=1000&metric=${metric}`;
             }
         }, 1000);
     };
