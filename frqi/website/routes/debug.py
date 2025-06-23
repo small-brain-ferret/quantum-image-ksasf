@@ -24,7 +24,7 @@ def debug_run():
     metric_name = "Weighted Fidelity" if weighted_fidelity else "Fidelity"
     total_images = 42000  # Adjust if your dataset size is different
     random_indices = sorted(random.sample(range(total_images), 10))
-    shot_counts = np.unique(np.round(np.logspace(np.log10(100), np.log10(100000), num=10)).astype(int))
+    shot_counts = np.unique(np.round(np.logspace(np.log10(100), np.log10(4000), num=10)).astype(int))
     all_rows = [('ImageIndex', 'Shots', 'WeightedFidelity' if weighted_fidelity else 'Fidelity')]
     avg_fidelity = np.zeros_like(shot_counts, dtype=float)
     fidelity_matrix = np.zeros((len(shot_counts), len(random_indices)))

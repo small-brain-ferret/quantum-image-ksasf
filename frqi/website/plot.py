@@ -59,7 +59,6 @@ def plot_metrics(shot_counts, avg_fidelity, metric_name, std_fidelity=None):
     ax.set_ylabel(f'Average {metric_name}')
     ax.grid(True)
     ax.legend()
-    ax.set_xlim(left=min(x), right=max(x))
-    plot_filename = f'debug_plotx_{metric_name.replace(' ', '_').lower()}.png'
+    plot_filename = f'debug_plot_{metric_name.replace(' ', '_').lower()}.png'
     plt.savefig(plot_filename, format='png')
     plt.close(fig)
