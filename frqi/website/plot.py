@@ -5,8 +5,8 @@ import numpy as np
 from scipy.optimize import curve_fit
 import os
 
-def logistic(x, L, x0, k, b):
-    return L / (1 + np.exp(-k * (x - x0))) + b
+def inverse_power(x, a, b, c):
+    return a * np.power(x, b) + c
 
 def plot_metrics(shot_counts, avg_metric, metric_name, std_metric=None, prefix='debug'):
     """
@@ -38,20 +38,17 @@ def plot_metrics(shot_counts, avg_metric, metric_name, std_metric=None, prefix='
     fig, ax = plt.subplots()
     ax.errorbar(x, y, yerr=yerr, fmt='o', capsize=8, elinewidth=1, label='Average ± Std')
 
-    # General logistic fit for a smooth trendline
+    # Inverse power fit for a smooth trendline
     try:
-        L_guess = max(y) - min(y)
-        x0_guess = np.median(x)
-        k_guess = 0.01
-        b_guess = min(y)
-        p0 = [L_guess, x0_guess, k_guess, b_guess]
-        params, _ = curve_fit(logistic, x, y, p0, maxfev=20000)
+        # Initial guess: a=1, b=-0.5, c=0.5
+        p0 = [1, -0.5, 0.5]
+        params, _ = curve_fit(inverse_power, x, y, p0, maxfev=20000)
         x_fit = np.linspace(x.min(), x.max(), 300)
-        y_fit = logistic(x_fit, *params)
-        ax.plot(x_fit, y_fit, color='black', linestyle='-', label='Logistic Trendline')
-        print(f"Logistic fit parameters: L={params[0]}, x0={params[1]}, k={params[2]}, b={params[3]}")
+        y_fit = inverse_power(x_fit, *params)
+        ax.plot(x_fit, y_fit, color='black', linestyle='-', label='Inverse Power Trendline')
+        print(f"Inverse power fit parameters: a={params[0]}, b={params[1]}, c={params[2]}")
     except Exception as e:
-        print("Logistic fit failed:", e)
+        print("Inverse power fit failed:", e)
 
     ax.set_title(f'FRQI Debug: Shots vs Average {metric_name}')
     ax.set_xlabel('Shots')
