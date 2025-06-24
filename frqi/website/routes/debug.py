@@ -22,7 +22,7 @@ def debug_run():
     metric_name = 'SSIM' if metric == 'ssim' else 'MAE'
     total_images = 42000  # Adjust if your dataset size is different
     random_indices = sorted(random.sample(range(total_images), 10))
-    shot_counts = np.unique(np.round(np.logspace(np.log10(100), np.log10(100000), num=10)).astype(int))
+    shot_counts = np.arange(100, 5001, 200)  # Every 100 shots, up to 5000
     all_rows = [('ImageIndex', 'Shots', metric_name)]
     avg_metric = np.zeros_like(shot_counts, dtype=float)
     metric_matrix = np.zeros((len(shot_counts), len(random_indices)))
