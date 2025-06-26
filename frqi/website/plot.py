@@ -77,7 +77,6 @@ def plot_metrics(shot_counts, avg_metric, metric_name, std_metric=None, prefix='
 
     fig, ax = plt.subplots()
     ax.errorbar(x, y, yerr=yerr, fmt='o', capsize=8, elinewidth=1, label='average ± sd')
-    
     # Pass yerr to trendline for weighted fit
     plot_trendline(ax, x, y, yerr=yerr, plateau=plateau)
 
@@ -93,9 +92,13 @@ def plot_metrics(shot_counts, avg_metric, metric_name, std_metric=None, prefix='
     ax.set_title(plot_title)
     ax.set_xlabel('Shots')
     ax.set_ylabel('Average Fidelity')
+    ax.set_xlim(0, 3000)
+    ax.set_ylim(0, 1.05)
     ax.grid(True)
-    ax.legend()
-    plot_filename = f'{prefix}_plot_{metric_name.lower()}.png'
-    print(f"Saving plot to {plot_filename}")
-    plt.savefig(plot_filename, format='png')
+    # Force correct legend
+    handles, labels = ax.get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    ax.legend(by_label.values(), by_label.keys())
+    plot_filename = f'{prefix}_plot_ssim.png' if metric_name.lower() == 'ssim' else f'{prefix}_plot_mae.png'
+    plt.savefig(os.path.join(os.getcwd(), plot_filename), format='png')
     plt.close(fig)
