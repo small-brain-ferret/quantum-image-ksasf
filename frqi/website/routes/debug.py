@@ -75,6 +75,7 @@ def debug_run():
         writer = csv.writer(f)
         writer.writerows(all_rows)
 
+    # Plot with error bars and trendline using shared utility
     plot_metrics(shot_counts, avg_metric, metric_name, std_metric, prefix='debug')
 
     # Embed plot in HTML

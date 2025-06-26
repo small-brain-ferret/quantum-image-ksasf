@@ -8,6 +8,23 @@ import os
 def inverse_power(x, a, b, c):
     return a * np.power(x, b) + c
 
+def plot_trendline(ax, x, y):
+    """
+    Fit and plot an inverse power trendline on the given axes.
+    Returns fit parameters if successful, else None.
+    """
+    try:
+        p0 = [1, -0.5, 0.5]
+        params, _ = curve_fit(inverse_power, x, y, p0, maxfev=20000)
+        x_fit = np.linspace(x.min(), x.max(), 300)
+        y_fit = inverse_power(x_fit, *params)
+        ax.plot(x_fit, y_fit, color='black', linestyle='-', label='Inverse Power Trendline')
+        print(f"Inverse power fit parameters: a={params[0]}, b={params[1]}, c={params[2]}")
+        return params
+    except Exception as e:
+        print("Inverse power fit failed:", e)
+        return None
+
 def plot_metrics(shot_counts, avg_metric, metric_name, std_metric=None, prefix='debug'):
     """
     shot_counts: 1D array of shot counts (x-axis)
@@ -38,17 +55,8 @@ def plot_metrics(shot_counts, avg_metric, metric_name, std_metric=None, prefix='
     fig, ax = plt.subplots()
     ax.errorbar(x, y, yerr=yerr, fmt='o', capsize=8, elinewidth=1, label='Average ± Std')
 
-    # Inverse power fit for a smooth trendline
-    try:
-        # Initial guess: a=1, b=-0.5, c=0.5
-        p0 = [1, -0.5, 0.5]
-        params, _ = curve_fit(inverse_power, x, y, p0, maxfev=20000)
-        x_fit = np.linspace(x.min(), x.max(), 300)
-        y_fit = inverse_power(x_fit, *params)
-        ax.plot(x_fit, y_fit, color='black', linestyle='-', label='Inverse Power Trendline')
-        print(f"Inverse power fit parameters: a={params[0]}, b={params[1]}, c={params[2]}")
-    except Exception as e:
-        print("Inverse power fit failed:", e)
+    # Plot trendline using the new function
+    plot_trendline(ax, x, y)
 
     ax.set_title(f'FRQI Debug: Shots vs Average {metric_name}')
     ax.set_xlabel('Shots')
