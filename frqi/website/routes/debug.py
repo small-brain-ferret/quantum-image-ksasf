@@ -22,10 +22,7 @@ def debug_run():
     metric_name = 'SSIM' if metric == 'ssim' else 'MAE'
     total_images = 42000  # Adjust if your dataset size is different
     random_indices = sorted(random.sample(range(total_images), 10))
-    shot_counts = np.concatenate([
-        np.arange(20, 201, 20),
-        np.arange(400, 2001, 200)
-    ])  # 20-200 by 20, then 400-2000 by 200
+    shot_counts = np.arange(100, 5001, 200)  # Every 100 shots, up to 5000
     all_rows = [('ImageIndex', 'Shots', metric_name)]
     avg_metric = np.zeros_like(shot_counts, dtype=float)
     metric_matrix = np.zeros((len(shot_counts), len(random_indices)))
@@ -74,7 +71,7 @@ def debug_run():
         writer = csv.writer(f)
         writer.writerows(all_rows)
 
-    plot_metrics(shot_counts, avg_metric, metric_name, std_metric, prefix='debug', xlim=(0, 2000), ylim=(0, 1.05), legend_labels=["average fidelity±sd", "trendline"])
+    plot_metrics(shot_counts, avg_metric, metric_name, std_metric, prefix='debug')
 
     # Embed plot in HTML
     with open(f'debug_plot_{metric_name.lower()}.png', 'rb') as f:
