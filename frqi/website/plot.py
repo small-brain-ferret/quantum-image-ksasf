@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 import os
+import random
 
 def inverse_power(x, a, b, c):
     return a * np.power(x, b) + c
@@ -22,7 +23,8 @@ def plot_trendline(ax, x, y, yerr=None, plateau=None):
         if plateau is not None:
             def fit_func(x, a, b):
                 return inverse_power_plateau(x, a, b, plateau)
-            p0 = [1, -0.5]
+            # Randomize initial guess for a and b
+            p0 = [random.uniform(0.5, 2.0), random.uniform(-2.0, -0.1)]
             if yerr is not None:
                 params, _ = curve_fit(fit_func, x, y, p0, sigma=yerr, absolute_sigma=True, maxfev=20000)
             else:
@@ -33,7 +35,8 @@ def plot_trendline(ax, x, y, yerr=None, plateau=None):
             print(f"Inverse power fit parameters: a={params[0]}, b={params[1]}, plateau={plateau}")
             return (*params, plateau)
         else:
-            p0 = [1, -0.5, 0.5]
+            # Randomize initial guess for a, b, c
+            p0 = [random.uniform(0.5, 2.0), random.uniform(-2.0, -0.1), random.uniform(0.8, 1.2)]
             if yerr is not None:
                 params, _ = curve_fit(inverse_power, x, y, p0, sigma=yerr, absolute_sigma=True, maxfev=20000)
             else:
