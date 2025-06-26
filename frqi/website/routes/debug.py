@@ -76,8 +76,10 @@ def debug_run():
         writer.writerows(all_rows)
 
     # Plot with error bars and trendline using shared utility
-    plot_title = f'FRQI: Shots vs Average {metric_name}'
-    plot_metrics(shot_counts, avg_metric, metric_name, std_metric, prefix='frqi', title=plot_title)
+    plot_title = 'FRQI: Shots vs Average Fidelity'
+    plot_metrics(
+        shot_counts, avg_metric, metric_name, std_metric, prefix='frqi', title=plot_title, plateau=0.99
+    )
 
     # Embed plot in HTML
     with open(f'debug_plot_{metric_name.lower()}.png', 'rb') as f:
