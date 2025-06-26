@@ -25,13 +25,14 @@ def plot_trendline(ax, x, y):
         print("Inverse power fit failed:", e)
         return None
 
-def plot_metrics(shot_counts, avg_metric, metric_name, std_metric=None, prefix='debug'):
+def plot_metrics(shot_counts, avg_metric, metric_name, std_metric=None, prefix='debug', title=None):
     """
     shot_counts: 1D array of shot counts (x-axis)
     avg_metric: 1D array of average metric values (y-axis)
     metric_name: string for labeling (e.g., 'SSIM' or 'MAE')
     std_metric: 1D array of standard deviations (optional, for error bars)
     prefix: 'debug' or 'batch_{start}'
+    title: custom plot title (optional)
     """
     # Print standard deviations
     if std_metric is not None:
@@ -58,9 +59,18 @@ def plot_metrics(shot_counts, avg_metric, metric_name, std_metric=None, prefix='
     # Plot trendline using the new function
     plot_trendline(ax, x, y)
 
-    ax.set_title(f'FRQI Debug: Shots vs Average {metric_name}')
+    # Always use 'Fidelity' in the title and y-axis label
+    if title is not None:
+        plot_title = title
+    elif prefix.lower().startswith('neqr'):
+        plot_title = 'NEQR: Shots vs Average Fidelity'
+    elif prefix.lower().startswith('frqi') or prefix.lower().startswith('debug'):
+        plot_title = 'FRQI: Shots vs Average Fidelity'
+    else:
+        plot_title = 'Shots vs Average Fidelity'
+    ax.set_title(plot_title)
     ax.set_xlabel('Shots')
-    ax.set_ylabel(f'Average {metric_name}')
+    ax.set_ylabel('Average Fidelity')
     ax.grid(True)
     ax.legend()
     plot_filename = f'{prefix}_plot_{metric_name.lower()}.png'
