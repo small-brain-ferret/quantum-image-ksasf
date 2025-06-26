@@ -11,28 +11,33 @@ def inverse_power(x, a, b, c):
 def inverse_power_plateau(x, a, b, plateau):
     return a * np.power(x, b) + plateau
 
-def plot_trendline(ax, x, y, plateau=None):
+def plot_trendline(ax, x, y, yerr=None, plateau=None):
     """
     Fit and plot an inverse power trendline on the given axes.
     If plateau is provided, fix the plateau value during fitting.
+    If yerr is provided, fit using weighted least squares to ensure the trendline passes through the error bars.
     Returns fit parameters if successful, else None.
     """
     try:
         if plateau is not None:
-            # Fit with plateau fixed
             def fit_func(x, a, b):
                 return inverse_power_plateau(x, a, b, plateau)
             p0 = [1, -0.5]
-            params, _ = curve_fit(fit_func, x, y, p0, maxfev=20000)
+            if yerr is not None:
+                params, _ = curve_fit(fit_func, x, y, p0, sigma=yerr, absolute_sigma=True, maxfev=20000)
+            else:
+                params, _ = curve_fit(fit_func, x, y, p0, maxfev=20000)
             x_fit = np.linspace(x.min(), x.max(), 300)
             y_fit = inverse_power_plateau(x_fit, *params, plateau)
             ax.plot(x_fit, y_fit, color='black', linestyle='-', label=f'Inverse Power Trendline (plateau={plateau:.2f})')
             print(f"Inverse power fit parameters: a={params[0]}, b={params[1]}, plateau={plateau}")
             return (*params, plateau)
         else:
-            # Fit all parameters
             p0 = [1, -0.5, 0.5]
-            params, _ = curve_fit(inverse_power, x, y, p0, maxfev=20000)
+            if yerr is not None:
+                params, _ = curve_fit(inverse_power, x, y, p0, sigma=yerr, absolute_sigma=True, maxfev=20000)
+            else:
+                params, _ = curve_fit(inverse_power, x, y, p0, maxfev=20000)
             x_fit = np.linspace(x.min(), x.max(), 300)
             y_fit = inverse_power(x_fit, *params)
             ax.plot(x_fit, y_fit, color='black', linestyle='-', label='Inverse Power Trendline')
@@ -73,8 +78,8 @@ def plot_metrics(shot_counts, avg_metric, metric_name, std_metric=None, prefix='
     fig, ax = plt.subplots()
     ax.errorbar(x, y, yerr=yerr, fmt='o', capsize=8, elinewidth=1, label='Average ± Std')
 
-    # Plot trendline using the new function, with plateau if provided
-    plot_trendline(ax, x, y, plateau=plateau)
+    # Pass yerr to trendline for weighted fit
+    plot_trendline(ax, x, y, yerr=yerr, plateau=plateau)
 
     # Always use 'Fidelity' in the title and y-axis label
     if title is not None:
