@@ -78,11 +78,17 @@ def debug_run():
     # Plot with error bars and trendline using shared utility
     plot_title = 'FRQI: Shots vs Average Fidelity'
     plot_metrics(
-        shot_counts, avg_metric, metric_name, std_metric, prefix='frqi', title=plot_title, plateau=0.99
+        shot_counts=shot_counts, 
+        avg_metric=avg_metric, 
+        metric_name=metric_name, 
+        std_metric=std_metric, 
+        prefix='frqi', 
+        title=plot_title, 
+        plateau=0.99
     )
 
     # Embed plot in HTML
-    with open(f'debug_plot_{metric_name.lower()}.png', 'rb') as f:
+    with open(f'frqi_plot_{metric_name.lower()}.png', 'rb') as f:
         plot_data = base64.b64encode(f.read()).decode('utf-8')
 
     html = f'''

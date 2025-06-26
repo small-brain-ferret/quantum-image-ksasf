@@ -29,7 +29,7 @@ def plot_trendline(ax, x, y, yerr=None, plateau=None):
                 params, _ = curve_fit(fit_func, x, y, p0, maxfev=20000)
             x_fit = np.linspace(x.min(), x.max(), 300)
             y_fit = inverse_power_plateau(x_fit, *params, plateau)
-            ax.plot(x_fit, y_fit, color='black', linestyle='-', label=f'Inverse Power Trendline (plateau={plateau:.2f})')
+            ax.plot(x_fit, y_fit, color='black', linestyle='-', label='trendline')
             print(f"Inverse power fit parameters: a={params[0]}, b={params[1]}, plateau={plateau}")
             return (*params, plateau)
         else:
@@ -40,7 +40,7 @@ def plot_trendline(ax, x, y, yerr=None, plateau=None):
                 params, _ = curve_fit(inverse_power, x, y, p0, maxfev=20000)
             x_fit = np.linspace(x.min(), x.max(), 300)
             y_fit = inverse_power(x_fit, *params)
-            ax.plot(x_fit, y_fit, color='black', linestyle='-', label='Inverse Power Trendline')
+            ax.plot(x_fit, y_fit, color='black', linestyle='-', label='trendline')
             print(f"Inverse power fit parameters: a={params[0]}, b={params[1]}, c={params[2]}")
             return params
     except Exception as e:
@@ -76,8 +76,8 @@ def plot_metrics(shot_counts, avg_metric, metric_name, std_metric=None, prefix='
     yerr = yerr * error_scale
 
     fig, ax = plt.subplots()
-    ax.errorbar(x, y, yerr=yerr, fmt='o', capsize=8, elinewidth=1, label='Average ± Std')
-
+    ax.errorbar(x, y, yerr=yerr, fmt='o', capsize=8, elinewidth=1, label='average ± sd')
+    
     # Pass yerr to trendline for weighted fit
     plot_trendline(ax, x, y, yerr=yerr, plateau=plateau)
 
@@ -96,5 +96,6 @@ def plot_metrics(shot_counts, avg_metric, metric_name, std_metric=None, prefix='
     ax.grid(True)
     ax.legend()
     plot_filename = f'{prefix}_plot_{metric_name.lower()}.png'
+    print(f"Saving plot to {plot_filename}")
     plt.savefig(plot_filename, format='png')
     plt.close(fig)
