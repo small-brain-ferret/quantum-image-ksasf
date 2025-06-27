@@ -1,6 +1,5 @@
-
 from qiskit import QuantumRegister, ClassicalRegister, QuantumCircuit
-from website.frqi_utils import frqi
+from .frqi_utils import frqi
 
 def build_circuit(angles):
     qr = QuantumRegister(7, 'q')
