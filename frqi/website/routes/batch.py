@@ -9,7 +9,7 @@ batch_bp = Blueprint('batch', __name__)
 @batch_bp.route('/start_batch')
 def start_batch():
     start = int(request.args.get('start', 0))
-    size = int(request.args.get('size', 1000))
+    size = int(request.args.get('size', 20))
     metric = request.args.get('metric', 'ssim').lower()
     threading.Thread(target=run_batch, args=(start, size, current_app.simulator, current_app.progress, metric), daemon=True).start()
     return '', 202
@@ -21,7 +21,7 @@ def get_progress():
 @batch_bp.route('/result')
 def result():
     start = int(request.args.get('start', 0))
-    size = int(request.args.get('size', 1000))
+    size = int(request.args.get('size', 20))
     metric = request.args.get('metric', 'ssim').lower()
     metric_name = 'SSIM' if metric == 'ssim' else 'MAE'
     plot_filename = f'batch_{start}_plot_{metric_name.lower()}.png'

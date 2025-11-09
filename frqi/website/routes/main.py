@@ -11,8 +11,8 @@ def index():
     <h1>Select Batch</h1>
     <form id="batchForm">
         <label for="batch">Select Batch Number (0–41):</label>
-        <input type="range" id="batchSlider" name="batch_number" min="0" max="41" value="0" oninput="batchLabel.innerText='Batch ' + (parseInt(this.value)+1) + ' (' + (this.value * 1000) + '–' + ((this.value * 1000)+999) + ')'">
-        <p id="batchLabel">Batch 1 (0–999)</p>
+        <input type="range" id="batchSlider" name="batch_number" min="0" max="41" value="0" oninput="batchLabel.innerText='Batch ' + (parseInt(this.value)+1) + ' (' + (this.value * 20) + '–' + ((this.value * 20)+19) + ')'">
+        <p id="batchLabel">Batch 1 (0–19)</p>
         <input type="hidden" name="start_index" id="start_index">
         <label for="metric">Metric:</label>
         <select id="metric" name="metric">
@@ -30,13 +30,13 @@ def index():
         document.getElementById('batchSlider').disabled = true;
         document.querySelector('input[type="submit"]').disabled = true;
         const batch_number = document.getElementById('batchSlider').value;
-        const start_index = batch_number * 1000;
+        const start_index = batch_number * 20;
         document.getElementById('start_index').value = start_index;
         const metric = document.getElementById('metric').value;
-        fetch(`/start_batch?start=${start_index}&size=1000&metric=${metric}`);
+        fetch(`/start_batch?start=${start_index}&size=20&metric=${metric}`);
 
         const bar = document.createElement('progress');
-        bar.max = 1000;
+        bar.max = 20;
         bar.value = 0;
         bar.id = 'bar';
         const timer = document.createElement('p');
@@ -65,7 +65,7 @@ def index():
             if (data.done >= data.total) {
                 clearInterval(interval);
                 clearInterval(timeTicker);
-                window.location.href = `/result?start=${start_index}&size=1000&metric=${metric}`;
+                window.location.href = `/result?start=${start_index}&size=20&metric=${metric}`;
             }
         }, 1000);
     };
