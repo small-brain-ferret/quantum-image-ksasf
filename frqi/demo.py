@@ -9,7 +9,7 @@ from io import BytesIO
 import base64
 from website.preprocess import load_and_process_image
 from website.build_circuit import build_circuit
-from website.analysis import balanced_weighted_mae, SSIM
+from website.analysis import balanced_weighted_mae, SSIM, mae, quantum_state_fidelity
 
 app = Flask(__name__)
 simulator = AerSimulator()
@@ -91,15 +91,25 @@ def demo():
                 diff_b64 = None
             # Compute fidelities
             try:
-                mae_fid = balanced_weighted_mae(original_image, retrieved_img)
+                balanced_mae_fid = balanced_weighted_mae(original_image, retrieved_img)
             except Exception as e:
-                print(f"MAE error: {e}")
-                mae_fid = 'N/A'
+                print(f"Balanced MAE error: {e}")
+                balanced_mae_fid = 'N/A'
             try:
                 ssim_fid = SSIM(original_image, retrieved_img)
             except Exception as e:
                 print(f"SSIM error: {e}")
                 ssim_fid = 'N/A'
+            try:
+                mae_fid = mae(original_image, retrieved_img)
+            except Exception as e:
+                print(f"MAE error: {e}")
+                mae_fid = 'N/A'
+            try:
+                state_fid = quantum_state_fidelity(original_image, retrieved_img)
+            except Exception as e:
+                print(f"Quantum State Fidelity error: {e}")
+                state_fid = 'N/A'
             start = page * images_per_page
             end = min(start + images_per_page, num_images)
             grid_thumbs = image_thumbs[start:end]
@@ -303,8 +313,10 @@ function gotoPage(p) {
             <h3 style="font-size:1.5em;">Reconstructed Image</h3>
             <img src="data:image/png;base64,{{ retrieved_b64 }}" alt="Reconstructed Image"/>
             <div style="margin-top: 10px; text-align: center; font-size: 1.1em;">
+                <span>Balanced Weighted MAE Fidelity: {{ '{:.4f}'.format(balanced_mae_fid) if balanced_mae_fid != 'N/A' else 'N/A' }}</span><br>
+                <span>SSIM Fidelity: {{ '{:.4f}'.format(ssim_fid) if ssim_fid != 'N/A' else 'N/A' }}</span><br>
                 <span>MAE Fidelity: {{ '{:.4f}'.format(mae_fid) if mae_fid != 'N/A' else 'N/A' }}</span><br>
-                <span>SSIM Fidelity: {{ '{:.4f}'.format(ssim_fid) if ssim_fid != 'N/A' else 'N/A' }}</span>
+                <span>Quantum State Fidelity: {{ '{:.4f}'.format(state_fid) if state_fid != 'N/A' else 'N/A' }}</span>
             </div>
         </div>
         <div class="img-col diff-col">
@@ -328,7 +340,7 @@ function gotoPage(p) {
 </div>
 </body>
 </html>
-''', shots=shots, index=index, page=page, original_b64=original_b64, retrieved_b64=retrieved_b64, grid_html=grid_html, page_selector=page_selector, mae_fid=mae_fid, ssim_fid=ssim_fid, diff_b64=diff_b64)
+''', shots=shots, index=index, page=page, original_b64=original_b64, retrieved_b64=retrieved_b64, grid_html=grid_html, page_selector=page_selector, balanced_mae_fid=balanced_mae_fid, ssim_fid=ssim_fid, mae_fid=mae_fid, state_fid=state_fid, diff_b64=diff_b64)
         except Exception as e:
             print(f"POST error: {e}")
             return f"<p>Error: {e}</p>"
@@ -373,15 +385,25 @@ function gotoPage(p) {
         diff_b64 = None
     # Compute fidelities for GET (showing original as both)
     try:
-        mae_fid = balanced_weighted_mae(original_img, retrieved_img)
+        balanced_mae_fid = balanced_weighted_mae(original_img, retrieved_img)
     except Exception as e:
         print(f"MAE error: {e}")
-        mae_fid = 'N/A'
+        balanced_mae_fid = 'N/A'
     try:
         ssim_fid = SSIM(original_img, retrieved_img)
     except Exception as e:
         print(f"SSIM error: {e}")
         ssim_fid = 'N/A'
+    try:
+        mae_fid = mae(original_image, retrieved_img)
+    except Exception as e:
+        print(f"MAE error: {e}")
+        mae_fid = 'N/A'
+    try:
+        state_fid = quantum_state_fidelity(original_image, retrieved_img)
+    except Exception as e:
+        print(f"Quantum State Fidelity error: {e}")
+        state_fid = 'N/A'
     start = page * images_per_page
     end = min(start + images_per_page, num_images)
     grid_thumbs = image_thumbs[start:end]
@@ -562,8 +584,10 @@ function gotoPage(p) {
             <h3 style="font-size:1.5em;">Reconstructed Image</h3>
             <img src="data:image/png;base64,{{ retrieved_b64 }}" alt="Reconstructed Image"/>
             <div style="margin-top: 10px; text-align: center; font-size: 1.1em;">
+                <span>Balanced Weighted MAE Fidelity: {{ '{:.4f}'.format(balanced_mae_fid) if balanced_mae_fid != 'N/A' else 'N/A' }}</span><br>
+                <span>SSIM Fidelity: {{ '{:.4f}'.format(ssim_fid) if ssim_fid != 'N/A' else 'N/A' }}</span><br>
                 <span>MAE Fidelity: {{ '{:.4f}'.format(mae_fid) if mae_fid != 'N/A' else 'N/A' }}</span><br>
-                <span>SSIM Fidelity: {{ '{:.4f}'.format(ssim_fid) if ssim_fid != 'N/A' else 'N/A' }}</span>
+                <span>Quantum State Fidelity: {{ '{:.4f}'.format(state_fid) if state_fid != 'N/A' else 'N/A' }}</span>
             </div>
         </div>
         <div class="img-col diff-col">
@@ -594,7 +618,7 @@ if (window.location.protocol !== 'https:') {
 </script>
 </body>
 </html>
-''', shots=shots, index=index, page=page, original_b64=original_b64, retrieved_b64=retrieved_b64, grid_html=grid_html, page_selector=page_selector, mae_fid=mae_fid, ssim_fid=ssim_fid, diff_b64=diff_b64)
+''', shots=shots, index=index, page=page, original_b64=original_b64, retrieved_b64=retrieved_b64, grid_html=grid_html, page_selector=page_selector, balanced_mae_fid=balanced_mae_fid, ssim_fid=ssim_fid, mae_fid=mae_fid, state_fid=state_fid, diff_b64=diff_b64)
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5050, use_reloader=False)  # Disable debug mode
