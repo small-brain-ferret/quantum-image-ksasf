@@ -83,8 +83,7 @@ def debug_run():
         metric_name=metric_name, 
         std_metric=std_metric, 
         prefix='frqi', 
-        title=plot_title, 
-        plateau=0.99
+        title=plot_title
     )
 
     # Embed plot in HTML
