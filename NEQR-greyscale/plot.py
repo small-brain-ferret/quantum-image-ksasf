@@ -73,6 +73,14 @@ def plot_metrics(shot_counts, avg_metric, metric_name, std_metric=None, prefix='
     else:
         yerr = np.array(std_metric)[sorted_indices]
 
+    # ensure yerr is finite and non-zero to avoid division-by-zero in curve fitting
+    min_sigma = 1e-6
+    yerr = np.array(yerr, dtype=float)
+    # replace non-finite values with min_sigma
+    yerr[~np.isfinite(yerr)] = min_sigma
+    # replace zeros or negatives with min_sigma
+    yerr = np.maximum(yerr, min_sigma)
+
     error_scale = 1.0
     yerr = yerr * error_scale
 
