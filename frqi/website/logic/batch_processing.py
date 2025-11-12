@@ -56,10 +56,7 @@ def run_batch(start, size, simulator, progress, metric):
     progress['status'] = 'running'
 
     images, _ = load_and_process_image(0)
-    shot_counts = np.concatenate([
-    np.arange(20, 201, 20),
-    np.arange(200, 3001, 200)
-    ])
+    np.arange(50, 3100, 50)
 
     metric_name_map = {
         'balanced_mae': 'Balanced MAE',
