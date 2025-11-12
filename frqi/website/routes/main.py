@@ -17,7 +17,9 @@ def index():
         <label for="metric">Metric:</label>
         <select id="metric" name="metric">
             <option value="ssim">SSIM</option>
+            <option value="balanced_mae">Balanced MAE</option>
             <option value="mae">MAE</option>
+            <option value="quantum_state">Quantum Fidelity</option>
         </select>
         <input type="submit" value="Start Processing">
     </form>

@@ -6,7 +6,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from website.preprocess import load_and_process_image
 from website.build_circuit import build_circuit
-from website.analysis import SSIM, balanced_weighted_mae
+from website.analysis import SSIM, balanced_weighted_mae, mae, quantum_state_fidelity
 from qiskit import transpile
 from website.plot import plot_metrics
 
@@ -27,16 +27,27 @@ def process_image(i, images, shot_counts, simulator, metric):
                 freq = counts.get(key, 0)
                 retrieved[idx] = np.sqrt(freq / shots) if freq else 0.0
             retrieved_img = (retrieved * 8.0 * 255.0).astype(int).reshape((8, 8))
-            if metric == 'mae':
+
+            if metric == 'balanced_mae':
                 value = balanced_weighted_mae(images[i], retrieved_img)
-            else:
+            elif metric == 'mae':
+                value = mae(images[i], retrieved_img)
+            elif metric == 'ssim':
                 value = SSIM(images[i], retrieved_img)
+            elif metric == 'quantum_state':
+                value = quantum_state_fidelity(images[i], retrieved_img)
+            else:
+                raise ValueError(f"Unknown metric: {metric}")
+
             rows.append((i, shots, value))
             metric_sums[j] = value
+
         return rows, metric_sums
+
     except Exception as e:
         print(f"Skipping image {i} due to error: {e}")
         return [], np.zeros_like(shot_counts, dtype=float)
+
 
 def run_batch(start, size, simulator, progress, metric):
     end = start + size
@@ -45,11 +56,16 @@ def run_batch(start, size, simulator, progress, metric):
     progress['status'] = 'running'
 
     images, _ = load_and_process_image(0)
-    shot_counts = np.concatenate([
-    np.arange(20, 201, 20),
-    np.arange(200, 3001, 200)
-    ])
-    metric_name = 'SSIM' if metric == 'ssim' else 'MAE'
+    shot_counts = np.arange(100, 2100, 100)
+
+    metric_name_map = {
+        'balanced_mae': 'Balanced MAE',
+        'mae': 'MAE',
+        'ssim': 'SSIM',
+        'quantum_state': 'Quantum Fidelity'
+    }
+    metric_name = metric_name_map.get(metric, metric.upper())
+
     all_rows = [('ImageIndex', 'Shots', metric_name)]
     avg_metric = np.zeros_like(shot_counts, dtype=float)
 
@@ -71,7 +87,7 @@ def run_batch(start, size, simulator, progress, metric):
 
     avg_metric /= size
 
-    filename = f'batch_{start}_results_{metric_name.lower()}.csv'
+    filename = f'batch_{start}_results_{metric_name.lower().replace(" ", "_")}.csv'
     with open(filename, 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerows(all_rows)
